@@ -1,0 +1,30 @@
+# Flutter
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.idea/
+**/*.iml
+
+# Python
+**/.venv/
+**/__pycache__/
+**/*.pyc
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# IDE and OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Android signing
+**/key.properties
+**/*.jks
+
+# Mosquitto runtime files
+mosquitto/data/*
+mosquitto/log/*

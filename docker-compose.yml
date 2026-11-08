@@ -1,0 +1,149 @@
+
+services:
+  # Frontend Node.js
+  frontend:
+    image: node:22-alpine
+    container_name: webdev_frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm init -y >/dev/null 2>&1; node server.js"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - php
+      - python
+    restart: unless-stopped
+
+  # Backend PHP
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webdev_php
+    volumes:
+      - ./php:/var/www/html
+    ports:
+      - "8080:80"
+    environment:
+      DSTORE_DB_HOST: ${DSTORE_DB_HOST}
+      DSTORE_DB_NAME: ${DSTORE_DB_NAME}
+      DSTORE_DB_USER: ${DSTORE_DB_USER}
+      DSTORE_DB_PASSWORD: ${DSTORE_DB_PASSWORD}
+    restart: unless-stopped
+
+  # Backend Python FastAPI + WebSocket
+  python:
+    build:
+      context: ./python
+    container_name: webdev_python
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # Database SQL: MySQL
+  mysql:
+    image: mysql:8.4
+    container_name: webdev_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: webdev_phpmyadmin
+    environment:
+      PMA_HOST: mysql
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+  # Database SQL: PostgreSQL
+  postgres:
+    image: postgres:17
+    container_name: webdev_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: webdev_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # Database NoSQL: MongoDB
+  mongodb:
+    image: mongo:8
+    container_name: webdev_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: webdev_mongo_express
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/
+      ME_CONFIG_BASICAUTH_ENABLED: "false"
+    ports:
+      - "8082:8081"
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
+  # MQTT broker
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: webdev_mosquitto
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    restart: unless-stopped
+
+  # RabbitMQ message broker + dashboard
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: webdev_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  postgres_data:
+  mongo_data:

@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tes WebSocket</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            padding: 30px;
+            color: #1e293b;
+        }
+        main {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+        }
+        input { width: 65%; }
+        #messages {
+            background: #f1f5f9;
+            padding: 15px;
+            min-height: 100px;
+            overflow-wrap: anywhere;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Tes WebSocket</h1>
+        <p id="status">Menghubungkan ke server...</p>
+
+        <input id="message" placeholder="Ketik pesan..." />
+        <button onclick="sendMessage()">Kirim</button>
+
+        <h3>Pesan dan balasan server</h3>
+        <div id="messages"></div>
+    </main>
+
+    <script>
+        const status = document.getElementById("status");
+        const messages = document.getElementById("messages");
+
+        const socket = new WebSocket("ws://localhost:8000/ws");
+
+        socket.onopen = function () {
+            status.textContent = "Terhubung ke WebSocket!";
+        };
+
+        socket.onmessage = function (event) {
+            messages.innerHTML +=
+                "<p>Balasan server: " + event.data + "</p>";
+        };
+
+        socket.onerror = function () {
+            status.textContent = "Terjadi kesalahan koneksi.";
+        };
+
+        socket.onclose = function () {
+            status.textContent = "Koneksi WebSocket terputus.";
+        };
+
+        function sendMessage() {
+            const input = document.getElementById("message");
+
+            if (socket.readyState === WebSocket.OPEN && input.value.trim()) {
+                socket.send(input.value);
+                messages.innerHTML +=
+                    "<p>Pesan saya: " + input.value + "</p>";
+                input.value = "";
+            }
+        }
+    </script>
+</body>
+</html>
